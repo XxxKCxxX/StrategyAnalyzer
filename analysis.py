@@ -6,6 +6,7 @@ import inspect
 from typing import Callable as function
 
 index_data = pd.read_csv('data.csv')
+unem_data = pd.read_csv('unem.csv')
 
 class DataSet:
     def __init__(self, data: pd.DataFrame, label: str, color: str):
@@ -91,13 +92,19 @@ def data_strat1(index: pd.DataFrame, mntl: int, _testResession: function, _invFr
     return DataReturn
 
 
-def unemResession(i) -> bool:
+def fallingResession(i) -> bool:
     global index_data
     index: pd.DataFrame = index_data.copy()
     before = 3
     
     if i > before: return False
     return index.iloc[i,1] < index.iloc[i-before,1]
+
+def unemResession(i) -> bool:
+
+    global unem_data
+
+    return unem_data.iloc[i,1] > 3000000 
 
 def testForHighest(strat: function):
     global index_data
