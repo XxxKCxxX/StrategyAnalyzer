@@ -101,9 +101,10 @@ def testForHighest(strat: function) -> float:
     global index_data
     index: pd.DataFrame = index_data.copy()
     
-    for x in range(10):
+    for x in range(100):
         values = strat(index=index, mntl=200, _testResession=unemResession, _invFrac=x/1000)["MSCI World"]
         index.insert(loc = x+2, column="STRAT1-"+str(x/100), value=values)
+    
     index.to_csv("file.csv")
 
     return (x)
