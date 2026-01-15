@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import inspect
+from typing import Callable as function
+
+index_data = pd.read_csv('data.csv')
 
 class DataSet:
     def __init__(self, data: pd.DataFrame, label: str, color: str):
@@ -49,12 +52,11 @@ def data_mntl(index: pd.DataFrame, mntl: int) -> np.ndarray:
     DataReturn.to_csv(str(inspect.currentframe().f_code.co_name) + '.csv')
     return DataReturn
 
-def data_strat1(index: pd.DataFrame, mntl: int) -> np.ndarray:
+def data_strat1(index: pd.DataFrame, mntl: int, _testResession: function, _invFrac: float) -> np.ndarray:
     fedfunds = pd.read_csv('fedfunds.csv')
     #man investiert teil in fedfunds cash wenn kein resession
-    investfrac = 0.7
+    investfrac = _invFrac
     cashfrac = 1 - investfrac
-    before = 3 #months
     
     fracs = np.zeros(len(index))
     fracs[0] = mntl / index.iloc[0,1]
@@ -65,7 +67,7 @@ def data_strat1(index: pd.DataFrame, mntl: int) -> np.ndarray:
     resession = False
     for i in range(1, len(index)):
         #check for resession
-        if i>before and index.iloc[i,1] < index.iloc[i-before,1]:
+        if _testResession:
             resession = True
         else:
             resession = False
@@ -86,8 +88,33 @@ def data_strat1(index: pd.DataFrame, mntl: int) -> np.ndarray:
     DataReturn.to_csv(str(inspect.currentframe().f_code.co_name) + '.csv')
     return DataReturn
 
+
+def unemResession(i) -> bool:
+    global index_data
+    index: pd.DataFrame = index_data.copy()
+    before = 3
+    
+    if i > before: return False
+    return index.iloc[i,1] < index.iloc[i-before,1]
+
+def testForHighest(strat: function) -> float:
+    global index_data
+    index: pd.DataFrame = index_data.copy()
+    
+    for x in range(10):
+        values = strat(index=index, mntl=200, _testResession=unemResession, _invFrac=x/1000)["MSCI World"]
+        index.insert(loc = x+2, column="STRAT1-"+str(x/100), value=values)
+    index.to_csv("file.csv")
+
+    return (x)
+
+
 if __name__ == "__main__":
+
     invest = 200
+
+
+    a = testForHighest(data_strat1)
     df_mntl = data_mntl(pd.read_csv('data.csv'), invest)
     ds_mntl = DataSet(df_mntl, 'Portfolio Value Mntl', 'blue')
     
@@ -96,7 +123,7 @@ if __name__ == "__main__":
          'VALUE': list(range(invest,(len(df_mntl)+1)*invest,invest))})
     ds_noInvest = DataSet(df_noInvest, color='red', label='Invested Amount')
     
-    df_strat1 = data_strat1(pd.read_csv('data.csv'), invest)
+    df_strat1 = data_strat1(pd.read_csv('data.csv'), invest, unemResession, 0.1)
     ds_strat1 = DataSet(df_strat1, 'Portfolio Value Strat1', 'green')
     
     df_unem = pd.read_csv('unem.csv')
